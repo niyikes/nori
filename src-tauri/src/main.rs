@@ -12,9 +12,8 @@ async fn open_note_window(app: tauri::AppHandle) {
     let result = WebviewWindowBuilder::new(
         &app,
         note_id,
-        WebviewUrl::External(
-            "http://localhost:1420/note.html".parse().unwrap()
-        ),
+        WebviewUrl::App("note.html".into()),
+
     )
     .title("nori note")
     .inner_size(250.0, 250.0)
