@@ -1,28 +1,113 @@
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&display=swap');
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
 .app {
-  font-family: "Segoe UI", sans-serif;
-  padding: 20px;
+  font-family: 'Quicksand', sans-serif;
+  padding: 24px 16px;
   text-align: center;
+  background: linear-gradient(180deg, #FFF9F0 0%, #FFF3E0 100%);
+  min-height: 100vh;
 }
 
 h1 {
-  margin: 0 0 12px;
-  color: #6b5b4d;
+  margin: 0 0 16px;
+  color: #8a6f5c;
+  font-weight: 700;
+  letter-spacing: 0.5px;
 }
 
 .add-btn {
-  padding: 8px 20px;
+  padding: 10px 22px;
   border: none;
-  border-radius: 20px;
+  border-radius: 24px;
   background: #FFD6E8;
   cursor: pointer;
-  font-weight: 600;
-  color: #6b5b4d;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
-  margin-bottom: 20px;
+  font-weight: 700;
+  font-family: inherit;
+  color: #7a5c68;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.12);
+  margin-bottom: 24px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .add-btn:hover {
   background: #ffc2de;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 10px rgba(0,0,0,0.15);
+}
+
+.add-btn:active {
+  transform: translateY(0);
+}
+
+.empty-state {
+  color: #b5a394;
+  font-size: 14px;
+  margin-top: 40px;
+  font-style: italic;
+}
+
+.note-thumb:hover {
+  transform: scale(1.08) rotate(0deg) !important;
+  box-shadow: 3px 5px 12px rgba(0,0,0,0.28);
+  z-index: 2;
+}
+
+.note-thumb .empty {
+  opacity: 0.4;
+  font-style: italic;
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.7); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.note-thumb {
+  width: 92px;
+  height: 92px;
+  padding: 10px;
+  border-radius: 6px;
+  box-shadow: 2px 3px 8px rgba(0,0,0,0.2);
+  cursor: grab;
+  font-size: 11px;
+  color: #4a4a4a;
+  overflow: hidden;
+  text-align: left;
+  font-family: 'Quicksand', sans-serif;
+  animation: popIn 0.25s ease backwards;
+  transition: transform 0.2s ease, box-shadow 0.15s ease;
+  user-select: none;
+  touch-action: none;
+}
+
+.note-thumb:hover {
+  box-shadow: 3px 5px 12px rgba(0,0,0,0.28);
+}
+
+.note-thumb.dragging {
+  cursor: grabbing;
+  transition: none;
+  z-index: 10;
+  box-shadow: 5px 8px 20px rgba(0,0,0,0.35);
+}
+
+.note-thumb:active {
+  cursor: grabbing;
+}
+
+.note-thumb.dragging {
+  cursor: grabbing;
+  transition: none;
+  z-index: 10;
+  box-shadow: 5px 8px 20px rgba(0,0,0,0.35);
 }
 
 .notes-grid {
@@ -33,24 +118,37 @@ h1 {
 }
 
 .note-thumb {
-  width: 90px;
-  height: 90px;
-  padding: 8px;
-  border-radius: 4px;
-  box-shadow: 2px 2px 6px rgba(0,0,0,0.25);
-  cursor: pointer;
+  width: 92px;
+  height: 92px;
+  padding: 10px;
+  border-radius: 6px;
+  box-shadow: 2px 3px 8px rgba(0,0,0,0.2);
+  cursor: grab;
   font-size: 11px;
   color: #4a4a4a;
   overflow: hidden;
   text-align: left;
-  transition: transform 0.15s ease;
+  font-family: 'Quicksand', sans-serif;
+  animation: popIn 0.25s ease backwards;
+  transition: transform 0.2s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+  user-select: none;
+  touch-action: none;
 }
 
 .note-thumb:hover {
-  transform: scale(1.05) !important;
+  box-shadow: 3px 5px 12px rgba(0,0,0,0.28);
 }
 
-.note-thumb .empty {
-  opacity: 0.4;
-  font-style: italic;
+.note-thumb.placeholder {
+  opacity: 0.3;
+}
+
+.note-thumb.ghost {
+  position: fixed;
+  pointer-events: none;
+  z-index: 100;
+  cursor: grabbing;
+  box-shadow: 5px 8px 20px rgba(0,0,0,0.35);
+  transition: none;
+  animation: none;
 }
