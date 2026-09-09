@@ -128,3 +128,103 @@ html, body {
 .note-editor::-webkit-scrollbar-thumb:hover {
   background: rgba(0,0,0,0.25);
 }
+
+.todo-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 6px 0;
+  cursor: default;
+}
+
+.todo-box {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin-top: 3px;
+  border-radius: 5px;
+  border: 2px solid rgba(0,0,0,0.3);
+  cursor: pointer;
+  position: relative;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+}
+
+.todo-box:hover {
+  transform: scale(1.1);
+}
+
+.todo-box::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 0px;
+  width: 4px;
+  height: 8px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg) scale(0);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.todo-item.checked .todo-box {
+  background: rgba(0,0,0,0.35);
+  border-color: transparent;
+}
+
+.todo-item.checked .todo-box::after {
+  transform: rotate(45deg) scale(1);
+}
+
+.todo-text {
+  outline: none;
+  transition: opacity 0.3s ease, color 0.3s ease;
+  position: relative;
+}
+
+.todo-item.checked .todo-text {
+  opacity: 0.45;
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+}
+
+.note-footer {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: flex-end;
+  padding: 4px 14px 10px;
+}
+
+.todo-insert-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0,0,0,0.08);
+  color: #4a4a4a;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.todo-insert-btn:hover {
+  background: rgba(0,0,0,0.16);
+  transform: scale(1.08);
+}
+
+.bullet-dot {
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  margin-top: 9px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.4);
+}
+
+.bullet-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 6px 0;
+}

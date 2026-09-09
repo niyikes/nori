@@ -33,14 +33,6 @@ function darkenColor(hex: string, amount: number) {
   return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
 }
 
-function lightenColor(hex: string, amount: number) {
-  const num = parseInt(hex.replace("#", ""), 16);
-  const r = Math.min(255, (num >> 16) + amount);
-  const g = Math.min(255, ((num >> 8) & 0x00ff) + amount);
-  const b = Math.min(255, (num & 0x0000ff) + amount);
-  return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
-}
-
 function getContrastText(hex: string) {
   const num = parseInt(hex.replace("#", ""), 16);
   const r = (num >> 16) & 0xff;
@@ -48,6 +40,75 @@ function getContrastText(hex: string) {
   const b = num & 0xff;
   const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
   return luminance > 0.6 ? "#4a4a4a" : "#ffffff";
+}
+
+function makeListElement(id: string, kind: "todo" | "bullet") {
+  const wrap = document.createElement("div");
+  wrap.className = kind === "todo" ? "todo-item" : "bullet-item";
+  wrap.id = id;
+  wrap.contentEditable = "false";
+
+  const marker = document.createElement("span");
+  marker.className = kind === "todo" ? "todo-box" : "bullet-dot";
+
+  const text = document.createElement("span");
+  text.className = "todo-text";
+  text.contentEditable = "true";
+
+  wrap.appendChild(marker);
+  wrap.appendChild(text);
+  return wrap;
+}
+
+function focusListText(itemEl: HTMLElement, atEnd: boolean) {
+  const textSpan = itemEl.classList.contains("todo-text") ? itemEl : itemEl.querySelector(".todo-text");
+  if (!textSpan) return;
+  const el = textSpan as HTMLElement;
+  setTimeout(() => {
+    el.focus();
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    range.collapse(!atEnd);
+    const sel = window.getSelection();
+    sel?.removeAllRanges();
+    sel?.addRange(range);
+  }, 0);
+}
+
+function placeCursorInPlainDiv(div: HTMLElement, atEnd: boolean) {
+  setTimeout(() => {
+    const range = document.createRange();
+    range.selectNodeContents(div);
+    range.collapse(!atEnd);
+    const sel = window.getSelection();
+    sel?.removeAllRanges();
+    sel?.addRange(range);
+  }, 0);
+}
+
+function revertItemToPlainLine(item: Element, atEnd: boolean) {
+  const textSpan = item.querySelector(".todo-text");
+  const div = document.createElement("div");
+  div.innerHTML = textSpan && textSpan.innerHTML ? textSpan.innerHTML : "<br>";
+  item.replaceWith(div);
+  placeCursorInPlainDiv(div, atEnd);
+  return div;
+}
+
+function getCurrentBlock(node: Node | null, editor: HTMLElement | null) {
+  if (!node || !editor) return null;
+  let el: Node | null = node;
+  while (el && el.parentElement !== editor) {
+    el = el.parentElement;
+  }
+  return el as HTMLElement | null;
+}
+
+function isCaretAtStart(el: HTMLElement, selection: Selection) {
+  const range = selection.getRangeAt(0).cloneRange();
+  range.selectNodeContents(el);
+  range.setEnd(selection.anchorNode as Node, selection.anchorOffset);
+  return range.toString().length === 0;
 }
 
 const initialColor = randomPastel();
@@ -60,6 +121,8 @@ const BUTTON_BASE = 16;
 const BUTTON_MAX = 24;
 const MAGNIFY_RADIUS = 40;
 
+let todoCounter = 0;
+
 function NoteApp() {
   const thisWindow = getCurrentWindow();
   const noteId = thisWindow.label;
@@ -68,7 +131,7 @@ function NoteApp() {
   const [rotation] = useState(initialRotation);
   const [loaded, setLoaded] = useState(false);
   const [toolbarPos, setToolbarPos] = useState<{ x: number; y: number } | null>(null);
-  const [scales, setScales] = useState([1, 1, 1]);
+  const [scales, setScales] = useState([1, 1, 1, 1]);
   const editorRef = useRef<HTMLDivElement>(null);
   const toolbarRef = useRef<HTMLDivElement>(null);
   const htmlRef = useRef("");
@@ -107,6 +170,22 @@ function NoteApp() {
     `;
   }, [color]);
 
+  useEffect(() => {
+    function handleTodoClick(e: MouseEvent) {
+      const target = e.target as HTMLElement;
+      if (target.classList.contains("todo-box")) {
+        const item = target.closest(".todo-item");
+        if (item) {
+          item.classList.toggle("checked");
+          handleInput();
+        }
+      }
+    }
+    const el = editorRef.current;
+    el?.addEventListener("click", handleTodoClick);
+    return () => el?.removeEventListener("click", handleTodoClick);
+  }, []);
+
   function scheduleSave(value: string) {
     htmlRef.current = value;
     if (saveTimeout.current) clearTimeout(saveTimeout.current);
@@ -136,7 +215,7 @@ function NoteApp() {
       x: rect.left + rect.width / 2,
       y: rect.top - 10,
     });
-    setScales([1, 1, 1]);
+    setScales([1, 1, 1, 1]);
   }
 
   function applyFormat(command: string) {
@@ -144,6 +223,128 @@ function NoteApp() {
     document.execCommand(command);
     handleInput();
     updateToolbarPosition();
+  }
+
+  function insertTodo() {
+    editorRef.current?.focus();
+    todoCounter += 1;
+    const id = `todo-${Date.now()}-${todoCounter}`;
+    const todoEl = makeListElement(id, "todo");
+    const afterBreak = document.createElement("div");
+    afterBreak.innerHTML = "<br>";
+
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0 && editorRef.current?.contains(selection.anchorNode)) {
+      const range = selection.getRangeAt(0);
+      range.deleteContents();
+      range.insertNode(afterBreak);
+      range.insertNode(todoEl);
+    } else {
+      editorRef.current?.appendChild(todoEl);
+      editorRef.current?.appendChild(afterBreak);
+    }
+
+    focusListText(todoEl, false);
+    handleInput();
+    setToolbarPos(null);
+  }
+
+  function handleSpaceConvert(e: React.KeyboardEvent) {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0 || !selection.isCollapsed) return;
+    const node = selection.anchorNode;
+    if (!node) return;
+
+    const insideItem = (node instanceof Element ? node : node.parentElement)?.closest(".todo-item, .bullet-item");
+    if (insideItem) return;
+
+    const block = getCurrentBlock(node, editorRef.current);
+    if (!block) return;
+
+    const range = selection.getRangeAt(0).cloneRange();
+    range.selectNodeContents(block);
+    range.setEnd(node, selection.anchorOffset);
+    const textBefore = range.toString();
+
+    if (textBefore === "--") {
+      e.preventDefault();
+      todoCounter += 1;
+      const id = `todo-${Date.now()}-${todoCounter}`;
+      const item = makeListElement(id, "todo");
+      block.replaceWith(item);
+      focusListText(item, false);
+      handleInput();
+      return;
+    }
+
+    if (textBefore === "-") {
+      e.preventDefault();
+      todoCounter += 1;
+      const id = `bullet-${Date.now()}-${todoCounter}`;
+      const item = makeListElement(id, "bullet");
+      block.replaceWith(item);
+      focusListText(item, false);
+      handleInput();
+    }
+  }
+
+  function handleEnterKey(e: React.KeyboardEvent) {
+    const target = e.target as HTMLElement;
+    if (!target.classList.contains("todo-text")) return;
+    const item = target.closest(".todo-item, .bullet-item");
+    if (!item) return;
+
+    e.preventDefault();
+    const isEmpty = target.textContent?.trim() === "";
+
+    if (isEmpty) {
+      revertItemToPlainLine(item, false);
+      handleInput();
+      return;
+    }
+
+    const kind = item.classList.contains("todo-item") ? "todo" : "bullet";
+    todoCounter += 1;
+    const id = `${kind}-${Date.now()}-${todoCounter}`;
+    const newItem = makeListElement(id, kind);
+    item.after(newItem);
+    focusListText(newItem, false);
+    handleInput();
+  }
+
+  function handleBackspaceKey(e: React.KeyboardEvent) {
+    const target = e.target as HTMLElement;
+    if (!target.classList.contains("todo-text")) return;
+    const selection = window.getSelection();
+    if (!selection || !selection.isCollapsed) return;
+    const item = target.closest(".todo-item, .bullet-item");
+    if (!item) return;
+    if (!isCaretAtStart(target, selection)) return;
+
+    e.preventDefault();
+    revertItemToPlainLine(item, false);
+    handleInput();
+  }
+
+  function handleEditorKeyDown(e: React.KeyboardEvent) {
+    if (e.key === " ") {
+      handleSpaceConvert(e);
+      return;
+    }
+    if (e.key === "Enter") {
+      handleEnterKey(e);
+      return;
+    }
+    if (e.key === "Backspace") {
+      handleBackspaceKey(e);
+    }
+  }
+
+  function handleRightClick(e: React.MouseEvent) {
+    e.preventDefault();
+    editorRef.current?.focus();
+    setToolbarPos({ x: e.clientX, y: e.clientY });
+    setScales([1, 1, 1, 1]);
   }
 
   function handleToolbarMouseMove(e: React.MouseEvent) {
@@ -161,7 +362,7 @@ function NoteApp() {
   }
 
   function handleToolbarMouseLeave() {
-    setScales([1, 1, 1]);
+    setScales([1, 1, 1, 1]);
   }
 
   async function handleClose() {
@@ -174,7 +375,7 @@ function NoteApp() {
     invoke("show_main_window");
   }
 
-  const toolbarText = getContrastText(color);
+  const toolbarText = getContrastText(darkenColor(color, 35));
 
   return (
     <div className="note-paper" style={{ background: color, opacity: loaded ? 1 : 0 }}>
@@ -199,6 +400,8 @@ function NoteApp() {
         onInput={handleInput}
         onMouseUp={updateToolbarPosition}
         onKeyUp={updateToolbarPosition}
+        onKeyDown={handleEditorKeyDown}
+        onContextMenu={handleRightClick}
         onBlur={() => setTimeout(() => setToolbarPos(null), 150)}
         data-placeholder="type your note..."
       />
@@ -207,7 +410,7 @@ function NoteApp() {
         <div
           ref={toolbarRef}
           className="selection-toolbar"
-          style={{ left: toolbarPos.x, top: toolbarPos.y, background: lightenColor(color,20), color: toolbarText }}
+          style={{ left: toolbarPos.x, top: toolbarPos.y, background: darkenColor(color, 35), color: toolbarText }}
           onMouseMove={handleToolbarMouseMove}
           onMouseLeave={handleToolbarMouseLeave}
         >
@@ -239,6 +442,17 @@ function NoteApp() {
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M6 4v6a6 6 0 0 0 12 0V4M4 20h16" />
+            </svg>
+          </button>
+          <button
+            className="format-btn"
+            style={{ transform: `scale(${scales[3]})` }}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={insertTodo}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="4" y="4" width="16" height="16" rx="3" />
+              <path d="M8 12l2.5 2.5L16 9" />
             </svg>
           </button>
         </div>
