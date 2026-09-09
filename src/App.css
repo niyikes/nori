@@ -1,19 +1,101 @@
 @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&display=swap');
 
+html, body {
+  margin: 0;
+  overflow: hidden;
+  height: 100vh;
+}
+
+#root {
+  height: 100vh;
+}
+
 * {
   box-sizing: border-box;
 }
 
 body {
   margin: 0;
+  background: transparent;
 }
 
 .app {
   font-family: 'Quicksand', sans-serif;
-  padding: 24px 16px;
-  text-align: center;
   background: linear-gradient(180deg, #FFF9F0 0%, #FFF3E0 100%);
-  min-height: 100vh;
+  height: 100vh;
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.titlebar {
+  height: 34px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px 0 14px;
+  background: rgba(0,0,0,0.03);
+  cursor: grab;
+}
+
+.titlebar-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #8a6f5c;
+}
+
+.titlebar-controls {
+  display: flex;
+  gap: 4px;
+}
+
+.titlebar-controls button {
+  width: 26px;
+  height: 22px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #8a6f5c;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.titlebar-controls button:hover {
+  background: rgba(0,0,0,0.08);
+}
+
+.titlebar-close:hover {
+  background: #ff8fa3 !important;
+  color: white;
+}
+
+.content {
+  padding: 20px 16px;
+  text-align: center;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.content::-webkit-scrollbar-thumb {
+  background: #ffd6e8;
+  border-radius: 10px;
+}
+
+.content::-webkit-scrollbar-thumb:hover {
+  background: #ffc2de;
 }
 
 h1 {
@@ -54,62 +136,6 @@ h1 {
   font-style: italic;
 }
 
-.note-thumb:hover {
-  transform: scale(1.08) rotate(0deg) !important;
-  box-shadow: 3px 5px 12px rgba(0,0,0,0.28);
-  z-index: 2;
-}
-
-.note-thumb .empty {
-  opacity: 0.4;
-  font-style: italic;
-}
-
-@keyframes popIn {
-  from { opacity: 0; transform: scale(0.7); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-.note-thumb {
-  width: 92px;
-  height: 92px;
-  padding: 10px;
-  border-radius: 6px;
-  box-shadow: 2px 3px 8px rgba(0,0,0,0.2);
-  cursor: grab;
-  font-size: 11px;
-  color: #4a4a4a;
-  overflow: hidden;
-  text-align: left;
-  font-family: 'Quicksand', sans-serif;
-  animation: popIn 0.25s ease backwards;
-  transition: transform 0.2s ease, box-shadow 0.15s ease;
-  user-select: none;
-  touch-action: none;
-}
-
-.note-thumb:hover {
-  box-shadow: 3px 5px 12px rgba(0,0,0,0.28);
-}
-
-.note-thumb.dragging {
-  cursor: grabbing;
-  transition: none;
-  z-index: 10;
-  box-shadow: 5px 8px 20px rgba(0,0,0,0.35);
-}
-
-.note-thumb:active {
-  cursor: grabbing;
-}
-
-.note-thumb.dragging {
-  cursor: grabbing;
-  transition: none;
-  z-index: 10;
-  box-shadow: 5px 8px 20px rgba(0,0,0,0.35);
-}
-
 .notes-grid {
   display: flex;
   flex-wrap: wrap;
@@ -139,6 +165,11 @@ h1 {
   box-shadow: 3px 5px 12px rgba(0,0,0,0.28);
 }
 
+.note-thumb .empty {
+  opacity: 0.4;
+  font-style: italic;
+}
+
 .note-thumb.placeholder {
   opacity: 0.3;
 }
@@ -151,4 +182,66 @@ h1 {
   box-shadow: 5px 8px 20px rgba(0,0,0,0.35);
   transition: none;
   animation: none;
+}
+
+.note-thumb {
+  position: relative;
+}
+
+.thumb-delete {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 18px;
+  height: 18px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.12);
+  color: #4a4a4a;
+  font-size: 10px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.note-thumb:hover .thumb-delete {
+  opacity: 1;
+}
+
+.thumb-delete:hover {
+  background: #ff8fa3;
+  color: white;
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.7); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.search-input {
+  width: 100%;
+  max-width: 220px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 20px;
+  background: rgba(0,0,0,0.05);
+  font-family: 'Quicksand', sans-serif;
+  font-size: 13px;
+  color: #6b5b4d;
+  outline: none;
+  margin-bottom: 20px;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.search-input::placeholder {
+  color: #b5a394;
+}
+
+.search-input:focus {
+  background: rgba(0,0,0,0.08);
+  box-shadow: 0 0 0 2px #ffd6e8;
 }

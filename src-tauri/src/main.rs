@@ -2,6 +2,8 @@
 
 use serde::{Deserialize, Serialize};
 use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
+use tauri::tray::TrayIconBuilder;
+use tauri::menu::{Menu, MenuItem};
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
 use std::fs;
 
@@ -77,17 +79,59 @@ async fn open_note_window(app: tauri::AppHandle, note_id: Option<String>) {
         return;
     }
 
-    let result = WebviewWindowBuilder::new(&app, id, WebviewUrl::App("note.html".into()))
+    let width = 250.0;
+    let height = 250.0;
+    let mut pos_x = 100.0;
+    let mut pos_y = 100.0;
+
+    if let Ok(cursor) = app.cursor_position() {
+        pos_x = cursor.x - width / 2.0;
+        pos_y = cursor.y - height / 2.0;
+    }
+
+    let builder = WebviewWindowBuilder::new(&app, id, WebviewUrl::App("note.html".into()))
         .title("nori note")
-        .inner_size(250.0, 250.0)
+        .inner_size(width, height)
         .decorations(false)
         .transparent(true)
         .resizable(true)
         .always_on_top(true)
-        .build();
+        .position(pos_x, pos_y);
 
-    if let Err(e) = result {
-        eprintln!("note window FAILED: {:?}", e);
+    let result = builder.build();
+
+    match result {
+        Ok(window) => {
+            if let Ok(Some(monitor)) = window.current_monitor() {
+                let monitor_pos = monitor.position();
+                let monitor_size = monitor.size();
+                let scale = monitor.scale_factor();
+
+                let min_x = monitor_pos.x as f64;
+                let min_y = monitor_pos.y as f64;
+                let max_x = min_x + (monitor_size.width as f64 / scale) - width;
+                let max_y = min_y + (monitor_size.height as f64 / scale) - height;
+
+                let clamped_x = pos_x.max(min_x).min(max_x.max(min_x));
+                let clamped_y = pos_y.max(min_y).min(max_y.max(min_y));
+
+                if clamped_x != pos_x || clamped_y != pos_y {
+                    let _ = window.set_position(tauri::Position::Logical(tauri::LogicalPosition {
+                        x: clamped_x,
+                        y: clamped_y,
+                    }));
+                }
+            }
+        }
+        Err(e) => eprintln!("note window FAILED: {:?}", e),
+    }
+}
+
+#[tauri::command]
+async fn show_main_window(app: tauri::AppHandle) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.show();
+        let _ = window.set_focus();
     }
 }
 
@@ -107,14 +151,56 @@ fn main() {
         )
         .setup(|app| {
             app.global_shortcut().register("Alt+N")?;
+
+            let show_item = MenuItem::with_id(app, "show", "Show nori", true, None::<&str>)?;
+            let quit_item = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
+            let menu = Menu::with_items(app, &[&show_item, &quit_item])?;
+
+            TrayIconBuilder::new()
+                .menu(&menu)
+                .icon(app.default_window_icon().unwrap().clone())
+                .on_menu_event(|app, event| {
+                    match event.id.as_ref() {
+                        "show" => {
+                            if let Some(window) = app.get_webview_window("main") {
+                                let _ = window.show();
+                                let _ = window.set_focus();
+                            }
+                        }
+                        "quit" => {
+                            app.exit(0);
+                        }
+                        _ => {}
+                    }
+                })
+                .on_tray_icon_event(|tray, event| {
+                    if let tauri::tray::TrayIconEvent::Click { button: tauri::tray::MouseButton::Left, .. } = event {
+                        let app = tray.app_handle();
+                        if let Some(window) = app.get_webview_window("main") {
+                            let _ = window.show();
+                            let _ = window.set_focus();
+                        }
+                    }
+                })
+                .build(app)?;
+
             Ok(())
+        })
+        .on_window_event(|window, event| {
+            if window.label() == "main" {
+                if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                    api.prevent_close();
+                    let _ = window.hide();
+                }
+            }
         })
         .invoke_handler(tauri::generate_handler![
             open_note_window,
             get_notes,
             save_note,
             delete_note,
-            reorder_notes
+            reorder_notes,
+            show_main_window
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

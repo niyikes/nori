@@ -16,7 +16,9 @@
         "title": "nori",
         "width": 300,
         "height": 500,
-        "resizable": true
+        "resizable": true,
+        "decorations": false,
+        "transparent": true
       }
     ],
     "security": {

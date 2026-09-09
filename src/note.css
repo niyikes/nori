@@ -1,7 +1,6 @@
 html, body {
   margin: 0;
   overflow: hidden;
-  background: transparent;
 }
 
 .note-paper {
@@ -11,72 +10,121 @@ html, body {
   display: flex;
   flex-direction: column;
   border-radius: 10px;
-  overflow: hidden;
+  overflow: visible;
   background-image: radial-gradient(rgba(0,0,0,0.035) 1px, transparent 1px);
   background-size: 6px 6px;
   box-shadow: 0 8px 24px rgba(0,0,0,0.25);
-  animation: fadeIn 0.18s ease;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.96); }
-  to { opacity: 1; transform: scale(1); }
+  transition: opacity 0.15s ease;
+  position: relative;
 }
 
 .note-header {
-  height: 32px;
+  height: 34px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 8px 0 12px;
+  padding: 0 10px;
   cursor: grab;
+  border-radius: 10px 10px 0 0;
 }
 
-.note-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: rgba(0,0,0,0.15);
-}
-
+.note-menu,
 .note-close {
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   border: none;
-  background: rgba(0,0,0,0.08);
+  background: rgba(0,0,0,0.00);
   color: #6b5b4d;
-  font-size: 14px;
-  line-height: 1;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.15s ease, transform 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+
+.note-menu:hover {
+  background: rgba(0,0,0,0.15);
+  transform: scale(1.00);
 }
 
 .note-close:hover {
-  background: #ff8fa3;
-  color: white;
-  transform: scale(1.1);
+  background: rgba(0,0,0,0.15);
+  color: #6b5b4d;
+  transform: scale(1.00);
 }
 
-.note-paper textarea {
+.note-editor {
   flex: 1;
   width: 100%;
   box-sizing: border-box;
   padding: 4px 20px 20px;
-  border: none;
-  background: transparent;
-  resize: none;
   outline: none;
   font-size: 16px;
   line-height: 1.6;
   font-family: "Segoe UI", "Comic Sans MS", sans-serif;
   color: #4a4a4a;
+  overflow-y: auto;
+  border-radius: 0 0 10px 10px;
 }
 
-.note-paper textarea::placeholder {
+.note-editor:empty::before {
+  content: attr(data-placeholder);
   color: rgba(0,0,0,0.25);
+  pointer-events: none;
+}
+
+.selection-toolbar {
+  position: fixed;
+  transform: translate(-50%, -100%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 9px;
+  border-radius: 14px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  z-index: 1000;
+  animation: toolbarIn 0.12s ease;
+}
+
+@keyframes toolbarIn {
+  from { opacity: 0; transform: translate(-50%, -90%); }
+  to { opacity: 1; transform: translate(-50%, -100%); }
+}
+
+.format-btn {
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  width: 16px;
+  height: 16px;
+  transition: transform 0.1s ease-out;
+}
+
+.format-btn:hover {
+  color: inherit;
+}
+
+
+.note-editor::-webkit-scrollbar {
+  width: 10px;
+}
+
+.note-editor::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.note-editor::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.15);
+  border-radius: 10px;
+}
+
+.note-editor::-webkit-scrollbar-thumb:hover {
+  background: rgba(0,0,0,0.25);
 }
