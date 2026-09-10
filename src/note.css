@@ -228,3 +228,33 @@ html, body {
   gap: 8px;
   margin: 6px 0;
 }
+
+.todo-text {
+  min-width: 2px;
+  display: inline-block;
+}
+
+.img-wrap {
+  position: relative;
+  display: inline-block;
+  margin: 6px 0;
+}
+
+.pasted-img {
+  width: 100%;
+  display: block;
+  border-radius: 6px;
+  pointer-events: none;
+}
+
+.img-resize-handle {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  width: 14px;
+  height: 14px;
+  background: rgba(0,0,0,0.45);
+  border-radius: 50%;
+  cursor: nwse-resize;
+  z-index: 10;
+}

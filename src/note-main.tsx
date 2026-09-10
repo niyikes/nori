@@ -145,7 +145,13 @@ function NoteApp() {
         setColor(existing.color);
         document.documentElement.style.background = existing.color;
         document.body.style.background = existing.color;
-        if (editorRef.current) editorRef.current.innerHTML = existing.text;
+        if (editorRef.current) {
+          editorRef.current.innerHTML = existing.text;
+          editorRef.current.querySelectorAll(".img-resize-handle").forEach((handle) => {
+            const wrap = handle.parentElement as HTMLElement;
+            handle.addEventListener("mousedown", (e) => startResize(e as MouseEvent, wrap));
+          });
+        }
       } else {
         invoke("save_note", { id: noteId, text: "", color: initialColor, rotation: initialRotation });
       }
@@ -249,6 +255,83 @@ function NoteApp() {
     setToolbarPos(null);
   }
 
+  function insertResizableImage(src: string) {
+    const wrap = document.createElement("div");
+    wrap.className = "img-wrap";
+    wrap.contentEditable = "false";
+    wrap.style.width = "220px";
+
+    const img = document.createElement("img");
+    img.src = src;
+    img.className = "pasted-img";
+
+    const handle = document.createElement("div");
+    handle.className = "img-resize-handle";
+
+    wrap.appendChild(img);
+    wrap.appendChild(handle);
+
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0 && editorRef.current?.contains(selection.anchorNode)) {
+      const range = selection.getRangeAt(0);
+      range.deleteContents();
+      range.insertNode(wrap);
+    } else {
+      editorRef.current?.appendChild(wrap);
+    }
+
+    const afterBreak = document.createElement("div");
+    afterBreak.innerHTML = "<br>";
+    wrap.after(afterBreak);
+
+    handle.addEventListener("mousedown", (e) => startResize(e as MouseEvent, wrap));
+    handleInput();
+  }
+
+  function startResize(e: MouseEvent, wrap: HTMLElement) {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startWidth = wrap.offsetWidth;
+
+    function onMove(moveEvent: MouseEvent) {
+      const newWidth = startWidth + (moveEvent.clientX - startX);
+      if (newWidth > 60) {
+        wrap.style.width = `${newWidth}px`;
+      }
+    }
+
+    function onUp() {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+      handleInput();
+    }
+
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  }
+
+  function handleImagePaste(e: React.ClipboardEvent) {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.type.startsWith("image/")) {
+        e.preventDefault();
+        const file = item.getAsFile();
+        if (!file) continue;
+
+        const reader = new FileReader();
+        reader.onload = () => {
+          const dataUrl = reader.result as string;
+          insertResizableImage(dataUrl);
+        };
+        reader.readAsDataURL(file);
+        return;
+      }
+    }
+  }
+
   function handleSpaceConvert(e: React.KeyboardEvent) {
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0 || !selection.isCollapsed) return;
@@ -314,19 +397,75 @@ function NoteApp() {
 
   function handleBackspaceKey(e: React.KeyboardEvent) {
     const target = e.target as HTMLElement;
-    if (!target.classList.contains("todo-text")) return;
     const selection = window.getSelection();
     if (!selection || !selection.isCollapsed) return;
-    const item = target.closest(".todo-item, .bullet-item");
-    if (!item) return;
-    if (!isCaretAtStart(target, selection)) return;
 
-    e.preventDefault();
-    revertItemToPlainLine(item, false);
-    handleInput();
+    if (target.classList.contains("todo-text")) {
+      const item = target.closest(".todo-item, .bullet-item");
+      if (!item) return;
+      if (!isCaretAtStart(target, selection)) return;
+      e.preventDefault();
+      revertItemToPlainLine(item, false);
+      handleInput();
+      return;
+    }
+
+    const block = getCurrentBlock(selection.anchorNode, editorRef.current);
+    if (!block) return;
+    if (!isCaretAtStart(block, selection)) return;
+
+    const prev = block.previousElementSibling;
+    if (!prev) return;
+
+    if (prev.classList.contains("todo-item") || prev.classList.contains("bullet-item")) {
+      e.preventDefault();
+      const textSpan = prev.querySelector(".todo-text") as HTMLElement | null;
+      if (!textSpan) return;
+      const leftoverHTML = block.innerHTML === "<br>" ? "" : block.innerHTML;
+      textSpan.innerHTML = textSpan.innerHTML + leftoverHTML;
+      block.remove();
+      focusListText(prev as HTMLElement, true);
+      handleInput();
+    }
   }
 
   function handleEditorKeyDown(e: React.KeyboardEvent) {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "a") {
+      e.preventDefault();
+      if (!editorRef.current) return;
+      const range = document.createRange();
+      range.selectNodeContents(editorRef.current);
+      const sel = window.getSelection();
+      sel?.removeAllRanges();
+      sel?.addRange(range);
+      return;
+    }
+
+    if (e.altKey && e.key.toLowerCase() === "w") {
+      e.preventDefault();
+      handleClose();
+      return;
+    }
+
+    if (e.key === "Backspace") {
+      const selection = window.getSelection();
+      if (selection && !selection.isCollapsed && editorRef.current) {
+        const full = document.createRange();
+        full.selectNodeContents(editorRef.current);
+        const range = selection.getRangeAt(0);
+        const wholeEditorSelected =
+          range.compareBoundaryPoints(Range.START_TO_START, full) === 0 &&
+          range.compareBoundaryPoints(Range.END_TO_END, full) === 0;
+        if (wholeEditorSelected) {
+          e.preventDefault();
+          editorRef.current.innerHTML = "<div><br></div>";
+          placeCursorInPlainDiv(editorRef.current.firstElementChild as HTMLElement, false);
+          handleInput();
+          return;
+        }
+      }
+    }
+
     if (e.key === " ") {
       handleSpaceConvert(e);
       return;
@@ -402,6 +541,7 @@ function NoteApp() {
         onKeyUp={updateToolbarPosition}
         onKeyDown={handleEditorKeyDown}
         onContextMenu={handleRightClick}
+        onPaste={handleImagePaste}
         onBlur={() => setTimeout(() => setToolbarPos(null), 150)}
         data-placeholder="type your note..."
       />
@@ -442,17 +582,6 @@ function NoteApp() {
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M6 4v6a6 6 0 0 0 12 0V4M4 20h16" />
-            </svg>
-          </button>
-          <button
-            className="format-btn"
-            style={{ transform: `scale(${scales[3]})` }}
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={insertTodo}
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <rect x="4" y="4" width="16" height="16" rx="3" />
-              <path d="M8 12l2.5 2.5L16 9" />
             </svg>
           </button>
         </div>
