@@ -160,6 +160,29 @@ function NoteApp() {
   }, []);
 
   useEffect(() => {
+  invoke<{ id: string; text: string; color: string; rotation: number }[]>("get_notes").then((notes) => {
+    const existing = notes.find((n) => n.id === noteId);
+    if (existing) {
+      htmlRef.current = existing.text;
+      setColor(existing.color);
+      document.documentElement.style.background = existing.color;
+      document.body.style.background = existing.color;
+      if (editorRef.current) {
+        editorRef.current.innerHTML = existing.text;
+        editorRef.current.querySelectorAll(".img-resize-handle").forEach((handle) => {
+          const wrap = handle.parentElement as HTMLElement;
+          handle.addEventListener("mousedown", (e) => startResize(e as MouseEvent, wrap));
+        });
+      }
+    } else {
+      invoke("save_note", { id: noteId, text: "", color: initialColor, rotation: initialRotation });
+    }
+    setLoaded(true);
+    invoke("show_note_window", { id: noteId });
+  });
+}, []);
+
+  useEffect(() => {
     const selectionColor = HIGHLIGHT_MAP[color] || darkenColor(color, 60);
     const styleId = "note-selection-style";
     let styleEl = document.getElementById(styleId) as HTMLStyleElement | null;

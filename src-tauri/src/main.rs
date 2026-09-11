@@ -96,6 +96,7 @@ async fn open_note_window(app: tauri::AppHandle, note_id: Option<String>) {
         .transparent(true)
         .resizable(true)
         .always_on_top(true)
+        .visible(false)
         .position(pos_x, pos_y);
 
     let result = builder.build();
@@ -132,6 +133,13 @@ async fn show_main_window(app: tauri::AppHandle) {
     if let Some(window) = app.get_webview_window("main") {
         let _ = window.show();
         let _ = window.set_focus();
+    }
+}
+
+#[tauri::command]
+async fn show_note_window(app: tauri::AppHandle, id: String) {
+    if let Some(window) = app.get_webview_window(&id) {
+        let _ = window.show();
     }
 }
 
@@ -200,7 +208,8 @@ fn main() {
             save_note,
             delete_note,
             reorder_notes,
-            show_main_window
+            show_main_window,
+            show_note_window
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
