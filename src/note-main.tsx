@@ -8,7 +8,7 @@ const PASTELS = ["#FFE8CC", "#FFD6E8", "#D6F5D6", "#D6E8FF", "#F0D6FF", "#FFF6C9
 
 const HIGHLIGHT_MAP: Record<string, string> = {
   "#FFE8CC": "#E8A855",
-  "#FFD6E8": "#E85D9A",
+  "#FFD6E8": "#e8b8cc",
   "#D6F5D6": "#5CB85C",
   "#D6E8FF": "#4A90D9",
   "#F0D6FF": "#A855D8",
@@ -136,6 +136,10 @@ function NoteApp() {
   const toolbarRef = useRef<HTMLDivElement>(null);
   const htmlRef = useRef("");
   const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const historyRef = useRef<string[]>([]);
+  const historyIndexRef = useRef(-1);
+  const skipHistoryRef = useRef(false);
+  const historyTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     invoke<{ id: string; text: string; color: string; rotation: number }[]>("get_notes").then((notes) => {
@@ -147,40 +151,21 @@ function NoteApp() {
         document.body.style.background = existing.color;
         if (editorRef.current) {
           editorRef.current.innerHTML = existing.text;
-          editorRef.current.querySelectorAll(".img-resize-handle").forEach((handle) => {
-            const wrap = handle.parentElement as HTMLElement;
-            handle.addEventListener("mousedown", (e) => startResize(e as MouseEvent, wrap));
-          });
+          rebindImageHandles();
         }
       } else {
         invoke("save_note", { id: noteId, text: "", color: initialColor, rotation: initialRotation });
       }
       setLoaded(true);
+      invoke("show_note_window", { id: noteId });
+      setTimeout(() => {
+        if (editorRef.current) {
+          historyRef.current = [editorRef.current.innerHTML];
+          historyIndexRef.current = 0;
+        }
+      }, 0);
     });
   }, []);
-
-  useEffect(() => {
-  invoke<{ id: string; text: string; color: string; rotation: number }[]>("get_notes").then((notes) => {
-    const existing = notes.find((n) => n.id === noteId);
-    if (existing) {
-      htmlRef.current = existing.text;
-      setColor(existing.color);
-      document.documentElement.style.background = existing.color;
-      document.body.style.background = existing.color;
-      if (editorRef.current) {
-        editorRef.current.innerHTML = existing.text;
-        editorRef.current.querySelectorAll(".img-resize-handle").forEach((handle) => {
-          const wrap = handle.parentElement as HTMLElement;
-          handle.addEventListener("mousedown", (e) => startResize(e as MouseEvent, wrap));
-        });
-      }
-    } else {
-      invoke("save_note", { id: noteId, text: "", color: initialColor, rotation: initialRotation });
-    }
-    setLoaded(true);
-    invoke("show_note_window", { id: noteId });
-  });
-}, []);
 
   useEffect(() => {
     const selectionColor = HIGHLIGHT_MAP[color] || darkenColor(color, 60);
@@ -215,6 +200,13 @@ function NoteApp() {
     return () => el?.removeEventListener("click", handleTodoClick);
   }, []);
 
+  function rebindImageHandles() {
+    editorRef.current?.querySelectorAll(".img-resize-handle").forEach((handle) => {
+      const wrap = handle.parentElement as HTMLElement;
+      handle.addEventListener("mousedown", (e) => startResize(e as MouseEvent, wrap));
+    });
+  }
+
   function scheduleSave(value: string) {
     htmlRef.current = value;
     if (saveTimeout.current) clearTimeout(saveTimeout.current);
@@ -223,9 +215,54 @@ function NoteApp() {
     }, 300);
   }
 
+  function pushHistory() {
+    if (!editorRef.current) return;
+    const html = editorRef.current.innerHTML;
+    historyRef.current = historyRef.current.slice(0, historyIndexRef.current + 1);
+    historyRef.current.push(html);
+    if (historyRef.current.length > 100) {
+      historyRef.current.shift();
+    }
+    historyIndexRef.current = historyRef.current.length - 1;
+  }
+
   function handleInput() {
     const value = editorRef.current?.innerHTML || "";
     scheduleSave(value);
+
+    if (skipHistoryRef.current) {
+      skipHistoryRef.current = false;
+      return;
+    }
+
+    if (historyTimeout.current) clearTimeout(historyTimeout.current);
+    historyTimeout.current = setTimeout(() => {
+      pushHistory();
+    }, 400);
+  }
+
+  function undo() {
+    if (historyIndexRef.current <= 0) return;
+    historyIndexRef.current -= 1;
+    const html = historyRef.current[historyIndexRef.current];
+    if (editorRef.current && html !== undefined) {
+      skipHistoryRef.current = true;
+      editorRef.current.innerHTML = html;
+      handleInput();
+      rebindImageHandles();
+    }
+  }
+
+  function redo() {
+    if (historyIndexRef.current >= historyRef.current.length - 1) return;
+    historyIndexRef.current += 1;
+    const html = historyRef.current[historyIndexRef.current];
+    if (editorRef.current && html !== undefined) {
+      skipHistoryRef.current = true;
+      editorRef.current.innerHTML = html;
+      handleInput();
+      rebindImageHandles();
+    }
   }
 
   function updateToolbarPosition() {
@@ -464,6 +501,18 @@ function NoteApp() {
       return;
     }
 
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z" && !e.shiftKey) {
+      e.preventDefault();
+      undo();
+      return;
+    }
+
+    if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === "y" || (e.key.toLowerCase() === "z" && e.shiftKey))) {
+      e.preventDefault();
+      redo();
+      return;
+    }
+
     if (e.altKey && e.key.toLowerCase() === "w") {
       e.preventDefault();
       handleClose();
@@ -536,6 +585,7 @@ function NoteApp() {
   function handleMenu() {
     invoke("show_main_window");
   }
+
 
   const toolbarText = getContrastText(darkenColor(color, 35));
 

@@ -81,12 +81,22 @@ async fn open_note_window(app: tauri::AppHandle, note_id: Option<String>) {
 
     let width = 250.0;
     let height = 250.0;
+
+
     let mut pos_x = 100.0;
     let mut pos_y = 100.0;
 
     if let Ok(cursor) = app.cursor_position() {
-        pos_x = cursor.x - width / 2.0;
-        pos_y = cursor.y - height / 2.0;
+        if let Some(monitor) = app.primary_monitor().ok().flatten() {
+            let scale = monitor.scale_factor();
+            let logical_x = cursor.x / scale;
+            let logical_y = cursor.y / scale;
+            pos_x = logical_x - width / 2.0;
+            pos_y = logical_y - height / 2.0;
+        } else {
+            pos_x = cursor.x - width / 2.0;
+            pos_y = cursor.y - height / 2.0;
+        }
     }
 
     let builder = WebviewWindowBuilder::new(&app, id, WebviewUrl::App("note.html".into()))
@@ -142,6 +152,20 @@ async fn show_note_window(app: tauri::AppHandle, id: String) {
         let _ = window.show();
     }
 }
+
+//pin and unpin da windows
+/*
+#[tauri::command]
+async fn toggle_pin(app: tauri::AppHandle, id: String) -> bool {
+    if let Some(window) = app.get_webview_window(&id) {
+        let is_pinned = window.is_always_on_top().unwrap_or(false);
+        let _ = window.set_always_on_top(!is_pinned);
+        return !is_pinned;
+    }
+    false
+}
+*/
+
 
 fn main() {
     tauri::Builder::default()
@@ -209,7 +233,7 @@ fn main() {
             delete_note,
             reorder_notes,
             show_main_window,
-            show_note_window
+            show_note_window,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

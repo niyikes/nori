@@ -44,9 +44,33 @@ html, body {
   transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
 }
 
+.note-pin {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0,0,0,0.00);
+  color: #6b5b4d;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+
+.note-pin:hover {
+  background: rgba(0,0,0,0.15);
+}
+
 .note-menu:hover {
   background: rgba(0,0,0,0.15);
   transform: scale(1.00);
+}
+
+.note-header-left {
+  display: flex;
+  align-items: center;
+  gap: 2px;
 }
 
 .note-close:hover {
