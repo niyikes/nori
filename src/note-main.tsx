@@ -168,6 +168,13 @@ function NoteApp() {
   }, []);
 
   useEffect(() => {
+    const timer = setTimeout(() => {
+      editorRef.current?.focus();
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
     const selectionColor = HIGHLIGHT_MAP[color] || darkenColor(color, 60);
     const styleId = "note-selection-style";
     let styleEl = document.getElementById(styleId) as HTMLStyleElement | null;

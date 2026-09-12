@@ -133,6 +133,13 @@ async fn open_note_window(app: tauri::AppHandle, note_id: Option<String>) {
                     }));
                 }
             }
+
+            let focus_window = window.clone();
+            tauri::async_runtime::spawn(async move {
+                tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+                let _ = focus_window.set_focus();
+            });
+
         }
         Err(e) => eprintln!("note window FAILED: {:?}", e),
     }

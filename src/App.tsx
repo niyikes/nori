@@ -68,7 +68,16 @@ function CatFace({ face }: { face: string }) {
 function stripHtml(html: string) {
   const div = document.createElement("div");
   div.innerHTML = html;
-  return div.textContent || div.innerText || "";
+
+  div.querySelectorAll(".todo-item, .bullet-item").forEach((el) => {
+    el.insertAdjacentText("afterbegin", "• ");
+  });
+
+  div.querySelectorAll("div, p, br").forEach((el) => {
+    el.insertAdjacentText("beforebegin", "\n");
+  });
+
+  return (div.textContent || div.innerText || "").replace(/\n\s*\n/g, "\n").trim();
 }
 
 function App() {

@@ -211,7 +211,7 @@ body {
   padding: 10px;
   border-radius: 8px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-  cursor: grab;
+  cursor: pointer;
   font-size: 11px;
   color: #4a4a4a;
   overflow: hidden;
@@ -231,6 +231,7 @@ body {
   height: 100%;
   overflow: hidden;
   line-height: 1.4;
+  white-space: pre-line;
 }
 
 .note-thumb .empty {
@@ -283,4 +284,28 @@ body {
   opacity: 0;
   transform: scale(0.6) rotate(8deg) !important;
   filter: blur(2px);
+}
+
+.bullet-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 6px 0;
+}
+
+.bullet-dot {
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  margin-top: 9px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.4);
+}
+
+.todo-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 6px 0;
+  transition: opacity 0.3s ease;
 }
