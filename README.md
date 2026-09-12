@@ -14,7 +14,7 @@ a really cute sticky notes app for your desktop (with cats!!!)
 
 | | |
 |---|---|
-| ![main window](image.png) | ![note](image-1.png) |
+| ![main window](src/assets/image.png) | ![note](src/assets/image-1.png) |
 
 
 ## stack
