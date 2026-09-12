@@ -48,7 +48,7 @@ const NIGHT_MESSAGES = [
 
 function isNightTime() {
   const hour = new Date().getHours();
-  return hour >= 21 || hour < 6;
+  return hour >= 24 || hour < 6;
 }
 
 function randomMessage() {
@@ -74,20 +74,12 @@ function stripHtml(html: string) {
 function App() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [query, setQuery] = useState("");
-  const [draggingId, setDraggingId] = useState<string | null>(null);
-  const [ghostPos, setGhostPos] = useState({ x: 0, y: 0 });
   const [headerColor] = useState(randomHeaderColor);
   const [current, setCurrent] = useState(randomMessage);
-  const isDragging = useRef(false);
-  const currentNotes = useRef<Note[]>([]);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const win = getCurrentWindow();
 
-  useEffect(() => {
-    currentNotes.current = notes;
-  }, [notes]);
-
   async function refreshNotes() {
-    if (isDragging.current) return;
     const result = await invoke<Note[]>("get_notes");
     setNotes(result);
   }
@@ -109,57 +101,20 @@ function App() {
 
   async function deleteNote(id: string, e: React.MouseEvent) {
     e.stopPropagation();
-    await invoke("delete_note", { id });
-    refreshNotes();
+    setDeletingId(id);
+    setTimeout(async () => {
+      await invoke("delete_note", { id });
+      setDeletingId(null);
+      refreshNotes();
+    }, 250);
   }
-
-  function handlePointerDown(e: React.PointerEvent, id: string) {
-    isDragging.current = true;
-    setDraggingId(id);
-    setGhostPos({ x: e.clientX, y: e.clientY });
-  }
-
-  function handlePointerMove(e: React.PointerEvent) {
-    if (!isDragging.current) return;
-    setGhostPos({ x: e.clientX, y: e.clientY });
-
-    const el = document.elementFromPoint(e.clientX, e.clientY);
-    const thumb = el?.closest(".note-thumb") as HTMLElement | null;
-    const overId = thumb?.dataset.id;
-
-    if (overId && overId !== draggingId) {
-      setNotes((prev) => {
-        const fromIndex = prev.findIndex((n) => n.id === draggingId);
-        const toIndex = prev.findIndex((n) => n.id === overId);
-        if (fromIndex === -1 || toIndex === -1) return prev;
-        const updated = [...prev];
-        const [moved] = updated.splice(fromIndex, 1);
-        updated.splice(toIndex, 0, moved);
-        return updated;
-      });
-    }
-  }
-
-  function handlePointerUp() {
-    if (!isDragging.current) return;
-    isDragging.current = false;
-    setDraggingId(null);
-    invoke("reorder_notes", { orderedIds: currentNotes.current.map((n) => n.id) });
-  }
-
-  const draggedNote = notes.find((n) => n.id === draggingId);
 
   const filteredNotes = query.trim()
     ? notes.filter((n) => stripHtml(n.text).toLowerCase().includes(query.toLowerCase()))
     : notes;
 
   return (
-    <div
-      className="app"
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerLeave={handlePointerUp}
-    >
+    <div className="app">
       <div className="mascot-header" style={{ background: headerColor }}>
         <div className="titlebar" data-tauri-drag-region>
           <span className="titlebar-title">nori</span>
@@ -204,11 +159,9 @@ function App() {
             {filteredNotes.map((note, i) => (
               <div
                 key={note.id}
-                data-id={note.id}
-                className={`note-thumb ${note.id === draggingId ? "placeholder" : ""}`}
-                onPointerDown={(e) => handlePointerDown(e, note.id)}
+                className={`note-thumb ${note.id === deletingId ? "deleting" : ""}`}
                 onClick={() => {
-                  if (!isDragging.current) openExisting(note.id);
+                  if (note.id !== deletingId) openExisting(note.id);
                 }}
                 style={{
                   background: note.color,
@@ -225,22 +178,6 @@ function App() {
           </div>
         )}
       </div>
-
-      {draggedNote && (
-        <div
-          className="note-thumb ghost"
-          style={{
-            background: draggedNote.color,
-            left: ghostPos.x,
-            top: ghostPos.y,
-            transform: `translate(-50%, -50%) rotate(${draggedNote.rotation}deg) scale(1.1)`,
-          }}
-        >
-          <div className="thumb-text">
-            {stripHtml(draggedNote.text) || <span className="empty">empty note</span>}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

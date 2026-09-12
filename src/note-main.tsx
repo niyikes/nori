@@ -7,14 +7,14 @@ import "./note.css";
 const PASTELS = ["#FFE8CC", "#FFD6E8", "#D6F5D6", "#D6E8FF", "#F0D6FF", "#FFF6C9", "#FFDDE1", "#E0FFF4"];
 
 const HIGHLIGHT_MAP: Record<string, string> = {
-  "#FFE8CC": "#E8A855",
-  "#FFD6E8": "#e8b8cc",
-  "#D6F5D6": "#5CB85C",
-  "#D6E8FF": "#4A90D9",
-  "#F0D6FF": "#A855D8",
-  "#FFF6C9": "#D9B800",
-  "#FFDDE1": "#E8607B",
-  "#E0FFF4": "#3AAE8F",
+  "#FFE8CC": "#f0c896",
+  "#FFD6E8": "#e4abc3",
+  "#D6F5D6": "#93d193",
+  "#D6E8FF": "#9ec1e6",
+  "#F0D6FF": "#cba8e0",
+  "#FFF6C9": "#e8d98a",
+  "#FFDDE1": "#eda3b0",
+  "#E0FFF4": "#8fd4bd",
 };
 
 function randomPastel() {
@@ -291,29 +291,6 @@ function NoteApp() {
     updateToolbarPosition();
   }
 
-  function insertTodo() {
-    editorRef.current?.focus();
-    todoCounter += 1;
-    const id = `todo-${Date.now()}-${todoCounter}`;
-    const todoEl = makeListElement(id, "todo");
-    const afterBreak = document.createElement("div");
-    afterBreak.innerHTML = "<br>";
-
-    const selection = window.getSelection();
-    if (selection && selection.rangeCount > 0 && editorRef.current?.contains(selection.anchorNode)) {
-      const range = selection.getRangeAt(0);
-      range.deleteContents();
-      range.insertNode(afterBreak);
-      range.insertNode(todoEl);
-    } else {
-      editorRef.current?.appendChild(todoEl);
-      editorRef.current?.appendChild(afterBreak);
-    }
-
-    focusListText(todoEl, false);
-    handleInput();
-    setToolbarPos(null);
-  }
 
   function insertResizableImage(src: string) {
     const wrap = document.createElement("div");
@@ -615,6 +592,7 @@ function NoteApp() {
         onKeyDown={handleEditorKeyDown}
         onContextMenu={handleRightClick}
         onPaste={handleImagePaste}
+        spellCheck={false}
         onBlur={() => setTimeout(() => setToolbarPos(null), 150)}
         data-placeholder="type your note..."
       />

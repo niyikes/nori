@@ -202,6 +202,7 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
+  justify-content: center;
 }
 
 .note-thumb {
@@ -215,11 +216,10 @@ body {
   color: #4a4a4a;
   overflow: hidden;
   font-family: 'Quicksand', sans-serif;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition: transform 0.25s cubic-bezier(0.36, 0, 0.66, -0.56), box-shadow 0.15s ease, opacity 0.25s ease, filter 0.25s ease;
   user-select: none;
   touch-action: none;
   position: relative;
-  transform: none !important;
 }
 
 .note-thumb:hover {
@@ -277,4 +277,10 @@ body {
 .thumb-delete:hover {
   background: #ff8fa3;
   color: white;
+}
+
+.note-thumb.deleting {
+  opacity: 0;
+  transform: scale(0.6) rotate(8deg) !important;
+  filter: blur(2px);
 }
