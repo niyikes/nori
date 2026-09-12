@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&display=swap');
 
 html, body {
   margin: 0;
@@ -21,12 +21,20 @@ body {
 
 .app {
   font-family: 'Quicksand', sans-serif;
-  background: linear-gradient(180deg, #FFF9F0 0%, #FFF3E0 100%);
+  background: #FFFBF5;
   height: 100vh;
-  border-radius: 10px;
+  border-radius: 24px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+}
+
+.mascot-header {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  border-radius: 24px 24px 26px 26px;
+  transition: background 1s ease;
 }
 
 .titlebar {
@@ -35,15 +43,14 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 8px 0 14px;
-  background: rgba(0,0,0,0.03);
+  padding: 0 8px 0 16px;
   cursor: grab;
 }
 
 .titlebar-title {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
-  color: #8a6f5c;
+  color: #4a4a4a;
 }
 
 .titlebar-controls {
@@ -53,36 +60,72 @@ body {
 
 .titlebar-controls button {
   width: 26px;
-  height: 22px;
+  height: 24px;
   border: none;
-  border-radius: 6px;
+  border-radius: 50%;
   background: transparent;
-  color: #8a6f5c;
-  font-size: 13px;
+  color: #4a4a4a;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
-.titlebar-controls button:hover {
-  background: rgba(0,0,0,0.08);
+.titlebar-min:hover {
+  background: rgba(0,0,0,0.1);
 }
 
 .titlebar-close:hover {
-  background: #ff8fa3 !important;
+  background: #ff8fa3;
   color: white;
 }
 
+.mascot-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 20px 22px;
+}
+
+.cat-face {
+  width: 70px;
+  height: 60px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.speech-bubble {
+  position: relative;
+  background: white;
+  border-radius: 18px;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #4a4a4a;
+  flex: 1;
+}
+
+.speech-bubble::after {
+  content: "";
+  position: absolute;
+  left: -8px;
+  top: 18px;
+  width: 14px;
+  height: 14px;
+  background: white;
+  border-radius: 4px;
+  transform: rotate(45deg);
+}
+
 .content {
-  padding: 20px 16px;
-  text-align: center;
+  padding: 20px;
   overflow-y: auto;
   flex: 1;
 }
 
 .content::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 
 .content::-webkit-scrollbar-track {
@@ -90,84 +133,108 @@ body {
 }
 
 .content::-webkit-scrollbar-thumb {
-  background: #ffd6e8;
+  background: rgba(0,0,0,0.1);
   border-radius: 10px;
 }
 
 .content::-webkit-scrollbar-thumb:hover {
-  background: #ffc2de;
+  background: rgba(0,0,0,0.16);
 }
 
-h1 {
-  margin: 0 0 16px;
-  color: #8a6f5c;
-  font-weight: 700;
-  letter-spacing: 0.5px;
+.toolbar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.search-input {
+  flex: 1;
+  padding: 9px 14px;
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 10px;
+  background: white;
+  font-family: 'Quicksand', sans-serif;
+  font-size: 13px;
+  color: #6b5b4d;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.search-input::placeholder {
+  color: #cbb9a9;
+}
+
+.search-input:focus {
+  border-color: #FFD6E8;
 }
 
 .add-btn {
-  padding: 10px 22px;
+  width: 34px;
+  height: 34px;
   border: none;
-  border-radius: 24px;
-  background: #FFD6E8;
+  border-radius: 50%;
+  background: #4a4a4a;
   cursor: pointer;
   font-weight: 700;
   font-family: inherit;
-  color: #7a5c68;
-  box-shadow: 0 3px 6px rgba(0,0,0,0.12);
-  margin-bottom: 24px;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  font-size: 18px;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  line-height: 1;
+  transition: background 0.15s ease;
 }
 
 .add-btn:hover {
-  background: #ffc2de;
-  transform: translateY(-2px);
-  box-shadow: 0 5px 10px rgba(0,0,0,0.15);
-}
-
-.add-btn:active {
-  transform: translateY(0);
+  background: #2f2f2f;
 }
 
 .empty-state {
   color: #b5a394;
   font-size: 14px;
   margin-top: 40px;
-  font-style: italic;
+  text-align: center;
 }
 
 .notes-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 14px;
-  justify-content: center;
+  gap: 12px;
 }
 
 .note-thumb {
-  width: 92px;
-  height: 92px;
+  width: 100px;
+  height: 100px;
   padding: 10px;
-  border-radius: 6px;
-  box-shadow: 2px 3px 8px rgba(0,0,0,0.2);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
   cursor: grab;
   font-size: 11px;
   color: #4a4a4a;
   overflow: hidden;
-  text-align: left;
   font-family: 'Quicksand', sans-serif;
-  animation: popIn 0.25s ease backwards;
-  transition: transform 0.2s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
   user-select: none;
   touch-action: none;
+  position: relative;
+  transform: none !important;
 }
 
 .note-thumb:hover {
-  box-shadow: 3px 5px 12px rgba(0,0,0,0.28);
+  box-shadow: 0 3px 8px rgba(0,0,0,0.16);
+  transform: translateY(-2px) !important;
+}
+
+.thumb-text {
+  height: 100%;
+  overflow: hidden;
+  line-height: 1.4;
 }
 
 .note-thumb .empty {
   opacity: 0.4;
-  font-style: italic;
 }
 
 .note-thumb.placeholder {
@@ -179,13 +246,8 @@ h1 {
   pointer-events: none;
   z-index: 100;
   cursor: grabbing;
-  box-shadow: 5px 8px 20px rgba(0,0,0,0.35);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.25);
   transition: none;
-  animation: none;
-}
-
-.note-thumb {
-  position: relative;
 }
 
 .thumb-delete {
@@ -196,7 +258,7 @@ h1 {
   height: 18px;
   border: none;
   border-radius: 50%;
-  background: rgba(0,0,0,0.12);
+  background: rgba(0,0,0,0.08);
   color: #4a4a4a;
   font-size: 10px;
   line-height: 1;
@@ -215,33 +277,4 @@ h1 {
 .thumb-delete:hover {
   background: #ff8fa3;
   color: white;
-}
-
-@keyframes popIn {
-  from { opacity: 0; transform: scale(0.7); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-.search-input {
-  width: 100%;
-  max-width: 220px;
-  padding: 8px 14px;
-  border: none;
-  border-radius: 20px;
-  background: rgba(0,0,0,0.05);
-  font-family: 'Quicksand', sans-serif;
-  font-size: 13px;
-  color: #6b5b4d;
-  outline: none;
-  margin-bottom: 20px;
-  transition: background 0.15s ease, box-shadow 0.15s ease;
-}
-
-.search-input::placeholder {
-  color: #b5a394;
-}
-
-.search-input:focus {
-  background: rgba(0,0,0,0.08);
-  box-shadow: 0 0 0 2px #ffd6e8;
 }
